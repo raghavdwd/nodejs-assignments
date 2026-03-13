@@ -1,6 +1,6 @@
 // You have to create a middleware for rate limiting a users request based on their username passed in the header
 
-const express = require('express');
+const express = require("express");
 const app = express();
 
 // Your task is to create a global middleware (app.use) which will
@@ -13,15 +13,34 @@ const app = express();
 
 let numberOfRequestsForUser = {};
 setInterval(() => {
-    numberOfRequestsForUser = {};
-}, 1000)
+  numberOfRequestsForUser = {};
+}, 1000);
 
-app.get('/user', function(req, res) {
-  res.status(200).json({ name: 'john' });
+const rateLimitMiddleware = (req, res, next) => {
+  const userId = req.headers["user-id"];
+
+  if (!numberOfRequestsForUser[userId]) {
+    numberOfRequestsForUser[userId] = 1;
+    return next();
+  }
+
+  numberOfRequestsForUser[userId]++;
+
+  if (numberOfRequestsForUser[userId] > 5) {
+    return res.sendStatus(404);
+  }
+
+  next();
+};
+
+app.use(rateLimitMiddleware);
+
+app.get("/user", function (req, res) {
+  res.status(200).json({ name: "john" });
 });
 
-app.post('/user', function(req, res) {
-  res.status(200).json({ msg: 'created dummy user' });
+app.post("/user", function (req, res) {
+  res.status(200).json({ msg: "created dummy user" });
 });
 
 module.exports = app;
